@@ -1,7 +1,9 @@
-##Data Modeling with Postgres - Song Play Database
+## Data Modeling with Postgres - Song Play Database
+
 By Harley Hutchins
 
-###Objective
+### Objective
+
 The objective of this repository is to implement an effective data model for a Postgres database. The input data comes from 1) a subet of a database of songs and 2) a simulated song play log. The scripts in this repository will perform the following actions:
 
 1. Create database and tables
@@ -9,10 +11,12 @@ The objective of this repository is to implement an effective data model for a P
 3. Transform data when applicable
 4. Load data into proper tables of the schema
 
-###Inputs
+### Inputs
+
 Raw data for this project comes from two sources, a database of song information and a simulated log of song plays.
 
-####Songs Dataset
+#### Songs Dataset
+
 The songs dataset consists of a small subset of the Million Songs Dataset, a database of song information including the following metadata of note:
 
 - Song_id: A unique song identifier from the Echo Nest 
@@ -27,7 +31,8 @@ The songs dataset consists of a small subset of the Million Songs Dataset, a dat
 
 The song data comes in the form of a JSON file unique to each song. Thus a tool for extractig data from JSON files will be needed. The songs used for this project are stored in a tree of nested folders. Thus a tool for searching through a number of folders to find the JSON files (and their filepaths) will be needed. 
 
-####Log Dataset
+#### Log Dataset
+
 An event simulator was used (in conjunction with the subset of songs from the Song Dataset) to generate a series of event logs of song plays by random users.  Each event log includes the following metadata of note:
 
 - artist: Name of the artist
@@ -44,9 +49,10 @@ An event simulator was used (in conjunction with the subset of songs from the So
 
 The dataset is partitioned by year/month/day, with a unique JSON event log file for each day in the month of November, 2018. Like the songs dataset, the event log files are stored in a tree of nested folders. Like the songs dataset, a method of searching for and reading from JSON files will be needed.
 
-###Methodology
+### Methodology
 
-####Schema
+#### Schema
+
 A simple star schema is used to model the data. The fact table will be constructed from information pulled from the log dataset. The surrounding dimension tables are built from both the log dataset and songs dataset. The schema is as follows:
 
 ***Fact Table***
@@ -93,7 +99,8 @@ A simple star schema is used to model the data. The fact table will be construct
 - year: year of song play
 - weekday: Weekday of song play
 
-####Creation of Database and Tables
+#### Creation of Database and Tables
+
 Interaction with Postgres is achieved via the Psycopg2 python wrapper. A python script called `create_tables.py` is used to create the database and tables. It imports `psycopg2` for Postgres execution and imports a variety of variables from a script called `sql_queries.py`, which is discussed later. The `create_tables.py` script defines the function `create_database()` to connect to Postgres, generate a cursor, drop the database if it exists, create a new instance of the database, drop connection, reestablish connection and cursor.
 
     def create_database():
@@ -115,7 +122,7 @@ Interaction with Postgres is achieved via the Psycopg2 python wrapper. A python 
     
         return cur, conn
         
-he `create_tables.py` script then defines the function `drop-tables(cur, conn)` to drop any existing tables to ensure a clean slate. 
+The `create_tables.py` script then defines the function `drop-tables(cur, conn)` to drop any existing tables to ensure a clean slate. 
 
     def drop_tables(cur, conn):
         for query in drop_table_queries:
@@ -210,7 +217,8 @@ The script `sql_queries.py` includes other queries used elsewhere in the project
 
     python create_tables.py
     
-####Processing the Datasets
+#### Processing the Datasets
+
 A script called `etl.py` is used to execute the functions that extract, transform, and load the song data into the songs and artist tables. It imports `psycopg2`, `os`, `pandas` for data processing, `glob` for finding filepaths, and the variables from script `sql_queries.py`, which will be discussed later. The first part of the script `etl.py` to discuss is the last section. The `__main__` module uses `psycopg2` to connect to the database and generatea a cursor. Then two `process_data()` functions are executed, which are discussed later. Finally, the connection is closed. Since the name/main conditional is added, the `__main__` module will execute if the `etl.py` script is called in the terminal.
 
     def main():
@@ -245,7 +253,8 @@ The `__main__` module executes two `process_data()` functions. The `process_data
             conn.commit()
             print('{}/{} files processed.'.format(i, num_files))
 
-####Processing the Songs Dataset
+#### Processing the Songs Dataset
+
 The `__main__` module of the script `etl.py` calls the `process_data()` function for the `data/song_data` filepath and `process_song_file` sub-function. The function `process_song_file()` is defined earlier in the `etl.py` script. The function extracts data from one of the songs data JSON files. The songs data files contain data needed for songs and artists dimension tables. The function uses `pandas` to read the input JSON file and generates a dataframe. This extracts all columns from the JSON file, but only a select few columns are needed for the songs and artists dimension tables. Thus a new variable, unique to the songs and artists tables, is generated that 1) selects only the dataframe columns of interest, 2) specifically extracts only the values from the trimmed down dataframe, and finally converts the values into a list. Then the `song_table_insert` and `artist_table_insert` variables, imported from the `sql_queries.py` script, are executed using `psycopg2`. These are Postgres table insert commands defined in `sql_queries.py`.
 
     def process_song_file(cur, filepath):
@@ -272,7 +281,8 @@ The `song_table_insert` and `artist_table_insert` variables are defined the scri
                             VALUES (%s, %s, %s, %s, %s) \
                             ON CONFLICT (artist_id) DO NOTHING")
 
-####Processing the Log Dataset
+#### Processing the Log Dataset
+
 The `__main__` module of the script `etl.py` calls the `process_data()` function for the `data/log_data` filepath and `process_log_file` sub-function. The function `process_log_file()` is defined earlier in the `etl.py` script. The function extracts data from one of the log data JSON files. The log data files contain data needed for the users and time dimension tables as well as the songplays fact table. The function uses `pandas` to read the input JSON file and generates a dataframe. This extracts all columns from the JSON file, but only selects for rows where the page is NextSong. 
 
     df = pd.read_json(filepath, lines=True)
