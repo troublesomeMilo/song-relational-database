@@ -87,9 +87,7 @@ time_table_insert = ("INSERT INTO time (start_time, hour, day, week, month, year
 # The conditional checks the song title, artist name, and song duration against
 # the values drawn from log dataset.
 
-song_select = ("""SELECT s.title 
-                FROM songs s 
-                WHERE s.title=%(song)s;""")
+song_select = ("""SELECT s.song_id, a.artist_id FROM songs s, artists a WHERE s.title=(%s) AND a.name=(%s);""")
 
 # QUERY LISTS
 

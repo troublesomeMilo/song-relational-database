@@ -83,7 +83,7 @@ A simple star schema is used to model the data. The fact table will be construct
 - year: Year of song release
 - duration: Song duration in minutes
 
-**artist**
+**artists**
 - artist_id: Unique artist identifier
 - name: Name of artist
 - location: Location of artist
@@ -336,4 +336,22 @@ The `user_table_insert` variable is defined in the `sql_queries.py` script.
                           VALUES (%s, %s, %s, %s, %s) \
                             ON CONFLICT (user_id) DO NOTHING;") # Added due to duplicate users
                             
-For the songplays fact table
+For the songplays fact table, the song_id and artist_id are needed. However, these values are not available in the log dataset. The log dataset does contain the song name and artist name. These can be cross-referenced with the songs dimension table and artists dimension table. To do this a query against the songs and artists table is made to return song_id and artist_id with a conditional matching the song title from the songs table and the song title from the log dataset as well as the artist name from the artists table and the artists name from the log dataset. This query is stored in `sql_queries.py` and imported into the `etl.py`. Frist the rows of the log dataframe df are iterated through and the song name `row.song` and the artist name `row.artist` are injected into the song_id/artist_id query. If the results are `None` the variables songid and artistid are assigned `None` otherwise the two values of the results tuple are assigned to songid and artistid. These variable are used, along with other values from the given row of the df, to create an entry into the songplays list. This songplay data tuple is then inserted into the songplays table using the imported songplay_table_insert query from `sql_queries.py`.
+
+    for index, row in df.iterrows():
+        
+        cur.execute(song_select, (row.song, row.artist))
+        results = cur.fetchone()
+        
+        if results:
+            songid, artistid = results
+        else:
+            songid, artistid = None, None
+
+        songplay_data = (row.ts, row.userId, row.level, songid, artistid, 
+                         row.sessionId, row.location, row.userAgent)
+        cur.execute(songplay_table_insert, songplay_data)
+        
+This completes the final process of the data processing. The last action of the `__main__` module is to close the connection to the database.
+
+    conn.close()

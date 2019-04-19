@@ -1,0 +1,9 @@
+#!/bin/bash 
+echo "Spinning up Postgres container"
+docker run --name sparkify -e POSTGRES_PASSWORD=password1 -d -p 5432:5432 postgres
+nc -zv localhost 5432
+echo "Creating test database"
+docker exec -it sparkify bash
+pqsl -U postgres
+create database test;
+
