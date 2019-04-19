@@ -10,15 +10,16 @@ time_table_drop = "DROP TABLE IF EXISTS time;"
 
 songplay_table_create = ("CREATE TABLE IF NOT EXISTS \
                           songplays ( \
-                          start_time VARCHAR \
-                        , user_id INT \
+						  songplay_id SERIAL \
+                        , start_time VARCHAR NOT NULL \
+                        , user_id INT NOT NULL \
                         , level TEXT \
                         , song_id VARCHAR \
                         , artist_id VARCHAR \
                         , session_id INT \
                         , location VARCHAR \
                         , user_agent VARCHAR \
-                        , PRIMARY KEY (start_time, user_id));")
+                        , PRIMARY KEY (songplay_id));")
 
 user_table_create = ("CREATE TABLE IF NOT EXISTS \
                       users ( \
@@ -32,8 +33,8 @@ user_table_create = ("CREATE TABLE IF NOT EXISTS \
 song_table_create = ("CREATE TABLE IF NOT EXISTS \
                       songs ( \
                       song_id VARCHAR \
-                    , title VARCHAR \
-                    , artist_id VARCHAR \
+                    , title VARCHAR NOT NULL \
+                    , artist_id VARCHAR NOT NULL \
                     , year INT \
                     , duration REAL \
                     , PRIMARY KEY (song_id));")
@@ -41,7 +42,7 @@ song_table_create = ("CREATE TABLE IF NOT EXISTS \
 artist_table_create = ("CREATE TABLE IF NOT EXISTS \
                         artists ( \
                         artist_id VARCHAR \
-                      , name VARCHAR \
+                      , name VARCHAR NOT NULL \
                       , location VARCHAR \
                       , latitude NUMERIC \
                       , longitude NUMERIC \
@@ -62,12 +63,11 @@ time_table_create = ("CREATE TABLE IF NOT EXISTS \
 
 songplay_table_insert = ("INSERT INTO songplays (start_time, user_id, level, song_id, \
                                                  artist_id, session_id, location, user_agent) \
-                          VALUES (%s, %s, %s, %s, %s, %s, %s, %s) \
-                            ON CONFLICT (start_time, user_id) DO NOTHING;")
+                          VALUES (%s, %s, %s, %s, %s, %s, %s, %s)")
 
 user_table_insert = ("INSERT INTO users (user_id, first_name, last_name, gender, level) \
                       VALUES (%s, %s, %s, %s, %s) \
-                        ON CONFLICT (user_id) DO NOTHING;") # Added due to duplicate users
+                        ON CONFLICT (user_id) DO UPDATE SET level=EXCLUDED.level;") # Added due to duplicate users, updates level to latest
 
 song_table_insert = ("INSERT INTO songs (song_id, title, artist_id, year, duration) \
                       VALUES (%s, %s, %s, %s, %s) \

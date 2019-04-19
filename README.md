@@ -173,14 +173,16 @@ The `create_table_queries` are a series of Postgres queries to create the tables
 
     songplay_table_create = ("CREATE TABLE IF NOT EXISTS \
                               songplays ( \
-                              start_time VARCHAR \
+                              songplay_id SERIAL \
+                            , start_time VARCHAR NOT NULL \
+                            , user_id INT NOT NULL \
                             , level TEXT \
                             , song_id VARCHAR \
                             , artist_id VARCHAR \
                             , session_id INT \
                             , location VARCHAR \
                             , user_agent VARCHAR \
-                            , PRIMARY KEY (start_time))")
+                            , PRIMARY KEY (songplay_id))")
     
     user_table_create = ("CREATE TABLE IF NOT EXISTS \
                           users ( \
@@ -194,8 +196,8 @@ The `create_table_queries` are a series of Postgres queries to create the tables
     song_table_create = ("CREATE TABLE IF NOT EXISTS \
                           songs ( \
                           song_id VARCHAR \
-                        , title VARCHAR \
-                        , artist_id VARCHAR \
+                        , title VARCHAR NOT NULL \
+                        , artist_id VARCHAR NOT NULL \
                         , year INT \
                         , duration REAL \
                         , PRIMARY KEY (song_id))")
@@ -203,7 +205,7 @@ The `create_table_queries` are a series of Postgres queries to create the tables
     artist_table_create = ("CREATE TABLE IF NOT EXISTS \
                             artists ( \
                             artist_id VARCHAR \
-                          , name VARCHAR \
+                          , name VARCHAR NOT NULL \
                           , location VARCHAR \
                           , latitude NUMERIC \
                           , longitude NUMERIC \
@@ -341,10 +343,10 @@ For the users dimension table a user_df dataframe is generated from the log data
 The `user_table_insert` variable is defined in the `sql_queries.py` script.
 
     user_table_insert = ("INSERT INTO users (user_id, first_name, last_name, gender, level) \
-                          VALUES (%s, %s, %s, %s, %s) \
-                            ON CONFLICT (user_id) DO NOTHING;") # Added due to duplicate users
+                                   VALUES (%s, %s, %s, %s, %s) \
+                                   ON CONFLICT (user_id) DO UPDATE SET level=EXCLUDED.level;") # Added due to duplicate users, updates to latest level
                             
-For the songplays fact table, the song_id and artist_id are needed. However, these values are not available in the log dataset. The log dataset does contain the song name and artist name. These can be cross-referenced with the songs dimension table and artists dimension table. To do this a query against the songs and artists table is made to return song_id and artist_id with a conditional matching the song title from the songs table and the song title from the log dataset as well as the artist name from the artists table and the artists name from the log dataset. This query is stored in `sql_queries.py` and imported into the `etl.py`. Frist the rows of the log dataframe df are iterated through and the song name `row.song` and the artist name `row.artist` are injected into the song_id/artist_id query. If the results are `None` the variables songid and artistid are assigned `None` otherwise the two values of the results tuple are assigned to songid and artistid. These variable are used, along with other values from the given row of the df, to create an entry into the songplays list. This songplay data tuple is then inserted into the songplays table using the imported songplay_table_insert query from `sql_queries.py`.
+For the songplays fact table, the song_id and artist_id are needed. However, these values are not available in the log dataset. The log dataset does contain the song name and artist name. These can be cross-referenced with the songs dimension table and artists dimension table. To do this a query against the songs and artists table is made to return song_id and artist_id with a conditional matching the song title from the songs table and the song title from the log dataset as well as the artist name from the artists table and the artists name from the log dataset. This query is stored in `sql_queries.py` and imported into the `etl.py`. Frist the rows of the log dataframe df are iterated through and the song name `row.song` and the artist name `row.artist` are injected into the song_id/artist_id query. If the results are `None` the variables songid and artistid are assigned `None` otherwise the two values of the results tuple are assigned to songid and artistid. These variable are used, along with other values from the given row of the df, to create an entry into the songplays list. 
 
     for index, row in df.iterrows():
         
@@ -359,6 +361,13 @@ For the songplays fact table, the song_id and artist_id are needed. However, the
         songplay_data = (row.ts, row.userId, row.level, songid, artistid, 
                          row.sessionId, row.location, row.userAgent)
         cur.execute(songplay_table_insert, songplay_data)
+
+This songplay data tuple is then inserted into the songplays table using the imported songplay_table_insert query from `sql_queries.py`. Note that no songplay_id is inserted. This is because the songplay_id value is automatically and incrementally generated with each new row added to the table without inserting a specific value. 
+
+    songplay_table_insert = ("INSERT INTO songplays (start_time, user_id, level, song_id, \
+                              artist_id, session_id, location, user_agent) \
+                              VALUES (%s, %s, %s, %s, %s, %s, %s, %s)")
+
         
 This completes the final process of the data processing. The last action of the `__main__` module is to close the connection to the database.
 
