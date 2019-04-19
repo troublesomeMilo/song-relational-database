@@ -113,7 +113,7 @@ Interaction with Postgres is achieved via the Psycopg2 python wrapper. A python 
 
     def create_database():
         # connect to default database
-        conn = psycopg2.connect("host=127.0.0.1 dbname=studentdb user=student password=student")
+        conn = psycopg2.connect("host=127.0.0.1 dbname=test user=postgres password=password1")
         conn.set_session(autocommit=True)
         cur = conn.cursor()
     
@@ -125,7 +125,7 @@ Interaction with Postgres is achieved via the Psycopg2 python wrapper. A python 
         conn.close()    
     
         # connect to sparkify database
-        conn = psycopg2.connect("host=127.0.0.1 dbname=sparkifydb user=student password=student")
+        conn = psycopg2.connect("host=127.0.0.1 dbname=sparkifydb user=postgres password=password1")
         cur = conn.cursor()
     
         return cur, conn
@@ -230,7 +230,7 @@ The script `sql_queries.py` includes other queries used elsewhere in the project
 A script called `etl.py` is used to execute the functions that extract, transform, and load the song data into the songs and artist tables. It imports `psycopg2`, `os`, `pandas` for data processing, `glob` for finding filepaths, and the variables from script `sql_queries.py`, which will be discussed later. The first part of the script `etl.py` to discuss is the last section. The `__main__` module uses `psycopg2` to connect to the database and generatea a cursor. Then two `process_data()` functions are executed, which are discussed later. Finally, the connection is closed. Since the name/main conditional is added, the `__main__` module will execute if the `etl.py` script is called in the terminal.
 
     def main():
-        conn = psycopg2.connect("host=127.0.0.1 dbname=sparkifydb user=student password=student")
+        conn = psycopg2.connect("host=127.0.0.1 dbname=sparkifydb user=postgres password=password1")
         cur = conn.cursor()
     
         process_data(cur, conn, filepath='data/song_data', func=process_song_file)
