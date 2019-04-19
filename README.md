@@ -13,6 +13,8 @@ The objective of this repository is to implement an effective data model for a P
 
 ### To Run The Program
 
+Note that Postgres is run in a docker container with a locally exposed port. The `test` database was created with a username of `postgres` and a password of `password1`
+
     python create_tables.py
 	python etl.py
 	python testing.py
