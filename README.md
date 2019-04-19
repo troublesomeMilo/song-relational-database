@@ -11,6 +11,12 @@ The objective of this repository is to implement an effective data model for a P
 3. Transform data when applicable
 4. Load data into proper tables of the schema
 
+### To Run The Program
+
+    python create_tables.py
+	python etl.py
+	python testing.py
+
 ### Inputs
 
 Raw data for this project comes from two sources, a database of song information and a simulated log of song plays.
